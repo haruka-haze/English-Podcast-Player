@@ -1,0 +1,515 @@
+<!doctype html>
+<!-- AI Podcast English の再生ページ。gas-tests/build.js が gas/Study.gs から作ります（直接は編集しない）。
+     このページには台本や音声は入っていません。メールのリンク（# の後ろの日付と署名）を使って、GAS から読み込みます。 -->
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>AI Podcast English</title>
+<style>
+:root{--bg:#f8f7f3;--fg:#1c1c1e;--muted:#6b6a70;--line:#e5e2d9;--card:#ffffff;--accent:#2f5bd3;--accent-weak:#e8eefc;
+--a:#b9461a;--b:#0f6f68;--now:#fff1bf;--ok:#177245;--ok-weak:#e3f4ea;--ng:#b42318;--ng-weak:#fdecea}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#131315;--fg:#ececee;--muted:#a1a0a7;--line:#2c2c31;
+--card:#1c1c20;--accent:#8fb0ff;--accent-weak:#1f2a44;--a:#f59a62;--b:#4fd1c5;--now:#3b3418;--ok:#5bd08a;--ok-weak:#16301f;--ng:#ff8a80;--ng-weak:#3a1a18}}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--fg)}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Sans","Noto Sans JP",Meiryo,sans-serif;-webkit-text-size-adjust:100%}
+.wrap{max-width:720px;margin:0 auto;padding:0 16px 80px}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+.bar{position:sticky;top:0;z-index:5;background:var(--card);border-bottom:1px solid var(--line);box-shadow:0 1px 8px rgba(0,0,0,.04)}
+.bar .in{max-width:720px;margin:0 auto;padding:8px 16px}
+.row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.row+.row{margin-top:6px}
+.play{width:44px;height:44px;border-radius:50%;background:var(--accent);color:#fff;font-size:18px;display:grid;place-items:center;flex:none}
+.play:disabled{opacity:.4}
+.skip{min-width:44px;height:36px;border:1px solid var(--line);border-radius:18px;font-size:13px;padding:0 10px}
+.time{font-variant-numeric:tabular-nums;font-size:13px;color:var(--muted);margin-left:auto}
+.seek{width:100%;accent-color:var(--accent);margin:6px 0 0}
+.load{width:100%;padding:12px;border-radius:12px;background:var(--accent);color:#fff;font-weight:600}
+.load:disabled{opacity:.6}
+.note{font-size:12px;color:var(--muted)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:18px;overflow:hidden}
+.seg button{padding:5px 9px;font-size:12px;color:var(--muted);min-height:30px}
+.seg button.on{background:var(--accent-weak);color:var(--accent);font-weight:600}
+.lab{font-size:12px;color:var(--muted)}
+.speed{height:36px;border:1px solid var(--line);border-radius:18px;padding:0 8px;font:inherit;font-size:13px;color:var(--fg);background:var(--card)}
+.chip{padding:5px 10px;font-size:12px;min-height:30px;border:1px solid var(--line);border-radius:16px;color:var(--muted)}
+.chip.on{background:var(--accent-weak);color:var(--accent);font-weight:600;border-color:transparent}
+header.top{padding:20px 0 8px;cursor:pointer}
+.date{font-size:13px;color:var(--muted);letter-spacing:.02em}
+h1{font-size:24px;line-height:1.3;margin:4px 0 2px}
+.ja-sub{display:none;font-size:14px;color:var(--muted);margin:2px 0 0}
+body.ja-all .ja-sub,.open>.ja-sub{display:block}
+.hh{cursor:pointer}
+details.guide{margin:12px 0 4px;border:1px solid var(--line);border-radius:12px;background:var(--card);padding:10px 14px;font-size:14px;line-height:1.7}
+details.guide summary{cursor:pointer;font-weight:600}
+details.guide ol{margin:6px 0 2px;padding-left:20px}
+section.topic{margin-top:28px}
+h2{font-size:19px;line-height:1.35;margin:0}
+.hrow{display:flex;align-items:flex-start;gap:8px;justify-content:space-between}
+.from{flex:none;font-size:12px;border:1px solid var(--line);border-radius:14px;padding:4px 10px;color:var(--accent)}
+.line{display:grid;grid-template-columns:auto 1fr auto;gap:2px 10px;padding:10px 8px;margin:2px -8px;border-radius:10px;cursor:pointer;scroll-margin-top:140px}
+.line:hover{background:rgba(127,127,127,.06)}
+.line.now{background:var(--now)}
+.line.flash{outline:2px solid var(--accent)}
+.num{grid-row:1/3;font-size:11px;color:var(--muted);padding-top:5px;min-width:22px;text-align:right;font-variant-numeric:tabular-nums}
+.sp{font-size:12px;font-weight:700;letter-spacing:.02em}
+.sp.A{color:var(--a)}.sp.B{color:var(--b)}
+.en{grid-column:2;font-size:17px;line-height:1.6;transition:filter .15s}
+.ja{grid-column:2;display:none;font-size:14px;line-height:1.6;color:var(--muted);border-left:3px solid var(--line);padding-left:8px;margin-top:4px}
+.line.open .ja,body.ja-all .ja{display:block}
+body.blur .line:not(.peek) .en{filter:blur(6px);user-select:none}
+.rp{grid-column:3;grid-row:1/3;align-self:start;width:36px;height:36px;border-radius:50%;border:1px solid var(--line);font-size:16px;color:var(--accent)}
+.rp[hidden]{display:none}
+.kw{text-decoration:underline;text-decoration-color:var(--accent);text-decoration-thickness:2px;text-underline-offset:3px}
+.box{margin:14px 0 0;border:1px solid var(--line);border-radius:12px;background:var(--card);padding:12px 14px}
+.box h3{font-size:13px;margin:0 0 8px;color:var(--muted);font-weight:600;letter-spacing:.03em}
+.vocab{list-style:none;margin:0;padding:0}
+.vocab li{display:flex;gap:10px;align-items:baseline;padding:5px 0;border-top:1px solid var(--line);font-size:15px}
+.vocab li:first-child{border-top:0}
+.vocab b{font-weight:600}
+.vocab .m{color:var(--muted);flex:1}
+.vocab button{font-size:12px;color:var(--accent)}
+.q{padding:8px 0;border-top:1px solid var(--line)}
+.q:first-of-type{border-top:0}
+.q p{margin:0 0 8px;font-size:15px;line-height:1.5}
+.ch{display:block;width:100%;text-align:left;border:1px solid var(--line);border-radius:10px;padding:9px 12px;margin:6px 0;font-size:15px;line-height:1.4}
+.ch.ok{border-color:var(--ok);background:var(--ok-weak)}
+.ch.ng{border-color:var(--ng);background:var(--ng-weak)}
+.ex{display:none;font-size:14px;line-height:1.6;color:var(--muted);margin-top:6px}
+.q.done .ex{display:block}
+.boot{padding:32px 0;font-size:16px;line-height:1.7;color:var(--muted)}
+.fbx{flex:none;display:inline-flex;gap:4px}
+.fbb{width:36px;height:32px;border:1px solid var(--line);border-radius:16px;font-size:15px}
+.fbb.on{background:var(--accent-weak);border-color:var(--accent)}
+.warn{margin:12px 0;padding:10px 14px;border-radius:12px;background:var(--ng-weak);color:var(--ng);font-size:14px}
+footer{margin-top:40px;font-size:12px;color:var(--muted);text-align:center}
+</style></head><body>
+<script>
+/**
+ * 学習ページを組み立てる。D = その日のデータ。
+ * transport = { load(i, ok, ng): 音声の i 番目を受け取る, feedback(t, rating, sig, done): 👍👎 を記録する（なければ出さない） }
+ */
+function startStudy(D, transport) {
+  var store = {
+    get: function (k, d) { try { var v = localStorage.getItem('aipe.' + k); return v === null ? d : v; } catch (e) { return d; } },
+    set: function (k, v) { try { localStorage.setItem('aipe.' + k, v); } catch (e) {} }
+  };
+  var st = { ja: store.get('ja', 'tap'), blur: store.get('blur', '0') === '1', speed: Number(store.get('speed', '1')) || 1, follow: store.get('follow', '1') === '1' };
+  var audio = null, loaded = false, lines = [], timed = [], current = 0;
+
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text !== undefined && text !== null) e.textContent = text;
+    return e;
+  }
+  function fmt(s) { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2); }
+  function esc(s) { return String(s).replace(/[.*+?^$(){}|[\]\\]/g, '\\$&'); }
+
+  /** 英文の中の「覚えたい語句」に下線を引く */
+  function enText(text, terms) {
+    var span = el('div', 'en');
+    if (!terms.length) { span.textContent = text; return span; }
+    var re = new RegExp('(^|[^A-Za-z])(' + terms.map(esc).join('|') + ')(?=$|[^A-Za-z])', 'gi');
+    var last = 0, m;
+    while ((m = re.exec(text))) {
+      var s = m.index + m[1].length;
+      if (s > last) span.appendChild(document.createTextNode(text.slice(last, s)));
+      span.appendChild(el('span', 'kw', m[2]));
+      last = s + m[2].length;
+      if (re.lastIndex === m.index) re.lastIndex++;
+    }
+    if (last < text.length) span.appendChild(document.createTextNode(text.slice(last)));
+    return span;
+  }
+
+  function segButtons(label, opts, value, onPick) {
+    var wrap = el('span', 'row');
+    wrap.style.gap = '6px';
+    wrap.appendChild(el('span', 'lab', label));
+    var g = el('span', 'seg');
+    opts.forEach(function (o) {
+      var b = el('button', o[0] === value ? 'on' : '', o[1]);
+      b.type = 'button';
+      b.onclick = function () {
+        Array.prototype.forEach.call(g.children, function (c) { c.className = ''; });
+        b.className = 'on';
+        onPick(o[0]);
+      };
+      g.appendChild(b);
+    });
+    wrap.appendChild(g);
+    return wrap;
+  }
+
+  function applyModes() {
+    document.body.classList.toggle('ja-all', st.ja === 'all');
+    document.body.classList.toggle('blur', st.blur);
+  }
+
+  // ------------------------------------------------ 再生バー
+  var bar = el('div', 'bar');
+  var barIn = el('div', 'in');
+  bar.appendChild(barIn);
+  var ctl = el('div', 'row');
+  var playBtn = el('button', 'play', '▶'); playBtn.type = 'button'; playBtn.setAttribute('aria-label', '再生'); playBtn.disabled = true;
+  var back = el('button', 'skip', '−5秒'); back.type = 'button'; back.disabled = true;
+  var fwd = el('button', 'skip', '+5秒'); fwd.type = 'button'; fwd.disabled = true;
+  var time = el('span', 'time', '0:00 / ' + fmt(D.audio ? D.audio.duration : 0));
+  var speedSel = el('select', 'speed');
+  speedSel.setAttribute('aria-label', '再生の速さ');
+  ['0.75', '0.9', '1', '1.15', '1.25'].forEach(function (v) {
+    var o = el('option', '', (v === '1' ? '1.0' : v) + '×'); o.value = v;
+    if (Number(v) === st.speed) o.selected = true;
+    speedSel.appendChild(o);
+  });
+  speedSel.onchange = function () { st.speed = Number(speedSel.value); store.set('speed', speedSel.value); if (audio) audio.playbackRate = st.speed; };
+  [playBtn, back, fwd, speedSel, time].forEach(function (e) { ctl.appendChild(e); });
+  var seek = el('input', 'seek'); seek.type = 'range'; seek.min = 0; seek.max = 1000; seek.value = 0; seek.disabled = true;
+  var loadRow = el('div', '');
+  var loadBtn = el('button', 'load', '▶ 音声を読み込む');
+  loadBtn.type = 'button';
+  var loadNote = el('div', 'note', '');
+  loadRow.appendChild(loadBtn); loadRow.appendChild(loadNote);
+
+  var modes = el('div', 'row');
+  modes.appendChild(segButtons('英文', [['0', '表示'], ['1', 'ぼかす']], st.blur ? '1' : '0', function (v) {
+    st.blur = v === '1'; store.set('blur', v);
+    document.querySelectorAll('.line.peek').forEach(function (e) { e.classList.remove('peek'); });
+    applyModes();
+  }));
+  modes.appendChild(segButtons('和訳', [['tap', 'タップで'], ['all', 'すべて']], st.ja, function (v) {
+    st.ja = v; store.set('ja', v); applyModes();
+  }));
+  var follow = el('button', 'chip' + (st.follow ? ' on' : ''), '追従');
+  follow.type = 'button';
+  follow.title = '再生中の文に合わせて自動でスクロールします';
+  follow.setAttribute('aria-pressed', st.follow ? 'true' : 'false');
+  follow.onclick = function () {
+    st.follow = !st.follow; store.set('follow', st.follow ? '1' : '0');
+    follow.className = 'chip' + (st.follow ? ' on' : '');
+    follow.setAttribute('aria-pressed', st.follow ? 'true' : 'false');
+  };
+  modes.appendChild(follow);
+
+  if (D.audio) {
+    barIn.appendChild(loadRow);
+    var mb = D.audio.bytes ? '（約' + (D.audio.bytes / 1048576).toFixed(1) + 'MB' + (D.audio.duration ? '・' + Math.round(D.audio.duration / 60) + '分' : '') + '）' : '';
+    loadBtn.textContent = '▶ 音声を読み込む' + mb;
+  } else {
+    var na = el('div', 'note', '音声はまだできていません。できあがるとメールが届きます。英文と和訳は先に読めます。');
+    na.style.padding = '6px 0';
+    barIn.appendChild(na);
+  }
+  barIn.appendChild(modes);
+  document.body.appendChild(bar);
+
+  function b64ToBytes(b64) {
+    var bin = atob(b64), out = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  }
+
+  function loadAudio() {
+    loadBtn.disabled = true;
+    loadBtn.textContent = '読み込み中…';
+    var parts = [];
+    var fail = function (err) {
+      loadBtn.disabled = false;
+      loadBtn.textContent = '▶ もう一度読み込む';
+      loadNote.textContent = '読み込めませんでした（' + (err && err.message ? err.message : err) + '）。' +
+        (D.audio && D.audio.url ? 'ドライブで聞くこともできます。' : '');
+      if (D.audio && D.audio.url && !loadNote.querySelector('a')) {
+        var a = el('a', '', 'ドライブで開く'); a.href = D.audio.url; a.target = '_blank'; a.rel = 'noopener';
+        loadNote.appendChild(a);
+      }
+    };
+    var next = function (i) {
+      transport.load(i, function (r) {
+        parts[i] = b64ToBytes(r.data);
+        loadBtn.textContent = '読み込み中… ' + Math.round(((i + 1) / r.parts) * 100) + '%';
+        if (i + 1 < r.parts) return next(i + 1);
+        ready(new Blob(parts, { type: 'audio/mpeg' }));
+      }, fail);
+    };
+    next(0);
+  }
+
+  function ready(blob) {
+    audio = new Audio();
+    audio.preload = 'auto';
+    audio.src = URL.createObjectURL(blob);
+    audio.playbackRate = st.speed;
+    loaded = true;
+    loadRow.remove();
+    barIn.insertBefore(seek, modes);
+    barIn.insertBefore(ctl, seek);
+    [playBtn, back, fwd, seek].forEach(function (e) { e.disabled = false; });
+    document.querySelectorAll('.rp,.from').forEach(function (e) { if (e.dataset.t !== '') e.hidden = false; });
+    audio.addEventListener('play', function () { playBtn.textContent = '❚❚'; playBtn.setAttribute('aria-label', '一時停止'); });
+    audio.addEventListener('pause', function () { playBtn.textContent = '▶'; playBtn.setAttribute('aria-label', '再生'); });
+    audio.addEventListener('ratechange', function () { if (audio.playbackRate !== st.speed) audio.playbackRate = st.speed; });
+    audio.addEventListener('timeupdate', tick);
+    audio.addEventListener('loadedmetadata', tick);
+    if ('mediaSession' in navigator) {
+      try {
+        navigator.mediaSession.metadata = new MediaMetadata({ title: D.title || D.program, artist: D.program, album: D.dateLabelEn });
+        navigator.mediaSession.setActionHandler('seekbackward', function () { jump(-5); });
+        navigator.mediaSession.setActionHandler('seekforward', function () { jump(5); });
+      } catch (e) {}
+    }
+    audio.play().catch(function () {});
+  }
+
+  function jump(sec) { if (audio) audio.currentTime = Math.max(0, Math.min((audio.duration || 0), audio.currentTime + sec)); }
+  function playAt(t) {
+    if (!audio) return;
+    audio.currentTime = Math.max(0, t - 0.25);
+    audio.playbackRate = st.speed;
+    audio.play().catch(function () {});
+  }
+
+  function tick() {
+    var d = audio.duration || (D.audio && D.audio.duration) || 0;
+    time.textContent = fmt(audio.currentTime) + ' / ' + fmt(d);
+    if (!seek.dragging && d) seek.value = Math.round((audio.currentTime / d) * 1000);
+    var now = 0;
+    for (var i = 0; i < timed.length; i++) { if (timed[i].t <= audio.currentTime + 0.05) now = timed[i].n; else break; }
+    if (now !== current) {
+      if (current && lines[current]) lines[current].classList.remove('now');
+      current = now;
+      var e = lines[current];
+      if (e) {
+        e.classList.add('now');
+        if (st.follow && !audio.paused) {
+          var r = e.getBoundingClientRect();
+          if (r.top < bar.offsetHeight + 8 || r.bottom > window.innerHeight - 8) e.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }
+    }
+  }
+
+  loadBtn.onclick = loadAudio;
+  playBtn.onclick = function () { if (!audio) return; if (audio.paused) audio.play().catch(function () {}); else audio.pause(); };
+  back.onclick = function () { jump(-5); };
+  fwd.onclick = function () { jump(5); };
+  seek.addEventListener('input', function () { seek.dragging = true; });
+  seek.addEventListener('change', function () { seek.dragging = false; if (audio && audio.duration) audio.currentTime = (seek.value / 1000) * audio.duration; });
+
+  // ------------------------------------------------ 本文
+  var wrap = el('div', 'wrap');
+  var head = el('header', 'top');
+  head.appendChild(el('div', 'date', D.dateLabelEn + '　' + D.program));
+  head.appendChild(el('h1', '', D.title || D.program));
+  if (D.title_ja) head.appendChild(el('p', 'ja-sub', D.title_ja));
+  head.onclick = function () { head.classList.toggle('open'); };
+  wrap.appendChild(head);
+
+  var guide = el('details', 'guide');
+  guide.appendChild(el('summary', '', 'おすすめの聞き方'));
+  var ol = el('ol');
+  ['英文を「ぼかす」にして、まず音だけで聞く（分からなくても止めずに最後まで）',
+   '英文を「表示」にして、目で追いながらもう一度聞く。分からない文（見出しも）はタップして和訳を確認',
+   '聞き取れなかった文は「↻」で聞き直す。慣れてきたら、音に重ねて声に出す（シャドーイング）',
+   '話題ごとの「Key words」を確かめて、最後に設問を解く'].forEach(function (t) { ol.appendChild(el('li', '', t)); });
+  guide.appendChild(ol);
+  guide.appendChild(el('div', 'note', '「↻」と「ここから再生」の位置は目安です（セリフの文字数から計算しています）。'));
+  wrap.appendChild(guide);
+  if (D.studyFailed) wrap.appendChild(el('div', 'warn', '今日は和訳と教材を作れませんでした。英文だけをお届けします。'));
+
+  D.segments.forEach(function (seg) {
+    var sec = el('section', 'topic');
+    var hr = el('div', 'hrow');
+    var hh = el('div', 'hh');
+    hh.appendChild(el('h2', '', seg.headline));
+    if (seg.headline_ja) hh.appendChild(el('p', 'ja-sub', seg.headline_ja));
+    hh.onclick = function () { hh.classList.toggle('open'); };
+    hr.appendChild(hh);
+    if (seg.fb && transport.feedback) {
+      // 話題ごとの 👍👎（明日以降の話題選びに反映）
+      var fbx = el('span', 'fbx');
+      [['up', '👍'], ['down', '👎']].forEach(function (x) {
+        var b = el('button', 'fbb', x[1]);
+        b.type = 'button';
+        b.setAttribute('aria-label', x[0] === 'up' ? 'この話題は良かった' : 'この話題は興味がない');
+        b.onclick = function () {
+          Array.prototype.forEach.call(fbx.children, function (c) { c.disabled = true; c.classList.remove('on'); });
+          transport.feedback(seg.topic_index, x[0], seg.fb[x[0]], function (ok) {
+            Array.prototype.forEach.call(fbx.children, function (c) { c.disabled = false; });
+            if (ok) b.classList.add('on');
+            else b.textContent = x[1] + '?';
+          });
+        };
+        fbx.appendChild(b);
+      });
+      hr.appendChild(fbx);
+    }
+    var first = seg.lines.filter(function (l) { return l.t !== null; })[0];
+    if (first) {
+      var from = el('button', 'from', '▶ ここから再生');
+      from.type = 'button'; from.hidden = true; from.dataset.t = String(first.t);
+      from.onclick = function () { playAt(first.t); };
+      hr.appendChild(from);
+    }
+    sec.appendChild(hr);
+
+    seg.lines.forEach(function (l) {
+      var terms = seg.vocab.filter(function (v) { return !v.line || v.line === l.n; }).map(function (v) { return v.term; });
+      var row = el('div', 'line');
+      row.id = 'L' + l.n;
+      row.appendChild(el('div', 'num', String(l.n)));
+      row.appendChild(el('div', 'sp ' + l.sp, D.speakers[l.sp]));
+      row.appendChild(enText(l.en, terms));
+      row.appendChild(el('div', 'ja', l.ja || '（この行の和訳はありません）'));
+      var rp = el('button', 'rp', '↻');
+      rp.type = 'button'; rp.hidden = true; rp.setAttribute('aria-label', 'この文から聞き直す');
+      rp.dataset.t = l.t === null ? '' : String(l.t);
+      rp.onclick = function (ev) { ev.stopPropagation(); if (l.t !== null) playAt(l.t); };
+      row.appendChild(rp);
+      row.onclick = function () {
+        if (window.getSelection && String(window.getSelection()).length > 2) return;
+        if (st.blur && !row.classList.contains('peek')) { row.classList.add('peek'); return; }
+        row.classList.toggle('open');
+      };
+      lines[l.n] = row;
+      if (l.t !== null) timed.push({ n: l.n, t: l.t });
+      sec.appendChild(row);
+    });
+
+    if (seg.vocab.length) {
+      var vb = el('div', 'box');
+      vb.appendChild(el('h3', '', 'KEY WORDS　覚えたい語句'));
+      var ul = el('ul', 'vocab');
+      seg.vocab.forEach(function (v) {
+        var li = el('li', '');
+        li.appendChild(el('b', '', v.term));
+        li.appendChild(el('span', 'm', v.meaning_ja));
+        if (v.line) {
+          var go = el('button', '', '[' + v.line + ']');
+          go.type = 'button';
+          go.onclick = function () {
+            var t = lines[v.line]; if (!t) return;
+            t.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            t.classList.add('flash', 'peek'); setTimeout(function () { t.classList.remove('flash'); }, 1600);
+          };
+          li.appendChild(go);
+        }
+        ul.appendChild(li);
+      });
+      vb.appendChild(ul);
+      sec.appendChild(vb);
+    }
+
+    if (seg.questions.length) {
+      var qb = el('div', 'box');
+      qb.appendChild(el('h3', '', 'QUIZ　TOEIC Part 3 形式'));
+      seg.questions.forEach(function (q, qi) {
+        var qd = el('div', 'q');
+        qd.appendChild(el('p', '', (qi + 1) + '. ' + q.question));
+        var btns = [];
+        q.choices.forEach(function (c, ci) {
+          var letter = 'ABCD'.charAt(ci);
+          var b = el('button', 'ch', '(' + letter + ') ' + c);
+          b.type = 'button';
+          b.onclick = function () {
+            if (qd.classList.contains('done')) return;
+            qd.classList.add('done');
+            btns.forEach(function (x, xi) { if ('ABCD'.charAt(xi) === q.answer) x.classList.add('ok'); });
+            if (letter !== q.answer) b.classList.add('ng');
+          };
+          btns.push(b);
+          qd.appendChild(b);
+        });
+        qd.appendChild(el('div', 'ex', '正解 (' + q.answer + ')　' + (q.explanation_ja || '')));
+        qb.appendChild(qd);
+      });
+      sec.appendChild(qb);
+    }
+    wrap.appendChild(sec);
+  });
+  timed.sort(function (a, b) { return a.t - b.t; });
+  wrap.appendChild(el('footer', '', D.program + '　' + D.dateLabel));
+  document.body.appendChild(wrap);
+  applyModes();
+}
+
+/**
+ * 起動。
+ *  - GAS のウェブアプリで開いたとき：DATA が埋め込まれている。音声は google.script.run で受け取る
+ *  - GitHub Pages の再生ページで開いたとき：URL の # の後ろ（api・d・s）を見て、GAS からデータと音声を取ってくる。
+ *    取りに行くときは Google のログイン情報を送らない（credentials: 'omit'）ので、
+ *    ブラウザで複数の Google アカウントにログインしていても開ける
+ *  - # の後ろに fb があるとき：メールの 👍👎 を記録するだけ
+ */
+(function () {
+  function note(text) {
+    var w = document.createElement('div');
+    w.className = 'wrap';
+    var p = document.createElement('p');
+    p.className = 'boot';
+    p.textContent = text;
+    w.appendChild(p);
+    document.body.appendChild(w);
+    return p;
+  }
+  if (typeof DATA !== 'undefined') {
+    startStudy(DATA, {
+      load: function (i, ok, ng) {
+        if (typeof google === 'undefined' || !google.script || !google.script.run) return ng(new Error('このページはメールのリンクから開いてください'));
+        google.script.run.withSuccessHandler(ok).withFailureHandler(ng).studyAudio(DATA.date, DATA.sig, i);
+      },
+      feedback: null
+    });
+    return;
+  }
+  var q = {};
+  (location.hash || '').replace(/^#/, '').split('&').forEach(function (kv) {
+    var k = kv.indexOf('=');
+    if (k > 0) q[decodeURIComponent(kv.slice(0, k))] = decodeURIComponent(kv.slice(k + 1));
+  });
+  if (!q.api || !/^https:\/\/script\.google\.com\/macros\/s\/[^/?#]+\/exec$/.test(q.api) || !q.d || !q.s) {
+    note('リンクが正しくありません。メールのボタンから開いてください。');
+    return;
+  }
+  function api(params) {
+    var qs = Object.keys(params).map(function (k) { return encodeURIComponent(k) + '=' + encodeURIComponent(params[k]); }).join('&');
+    return fetch(q.api + '?' + qs, { credentials: 'omit', redirect: 'follow', referrerPolicy: 'no-referrer' }).then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    });
+  }
+  function feedback(t, rating, sig, done) {
+    api({ action: 'fbapi', d: q.d, t: t, r: rating, s: sig }).then(function (j) { done(!!j.ok, j); }, function (e) { done(false, { error: e.message }); });
+  }
+  if (q.fb) {
+    var p = note('記録しています…');
+    feedback(q.t, q.r, q.s, function (ok, j) {
+      p.textContent = ok
+        ? (j.rating === 'up' ? '👍' : '👎') + ' 記録しました：' + j.headline + '。明日以降の話題選びに反映されます。このページは閉じて大丈夫です。'
+        : '記録できませんでした（' + (j && j.error ? j.error : '不明なエラー') + '）。少しおいて、もう一度押してください。';
+    });
+    return;
+  }
+  var loading = note('読み込んでいます…');
+  api({ action: 'studydata', d: q.d, s: q.s }).then(function (j) {
+    if (!j.ok) {
+      loading.textContent = j.error === 'not_found' ? 'この日の台本が見つかりません（作業フォルダは30日で消えます）。' : 'リンクが正しくありません。メールのボタンから開いてください。';
+      return;
+    }
+    loading.parentNode.remove();
+    document.title = j.data.program + '｜' + j.data.dateLabel;
+    startStudy(j.data, {
+      load: function (i, ok, ng) {
+        api({ action: 'studyaudio', d: q.d, s: q.s, p: i }).then(function (r) {
+          if (r.ok) ok(r); else ng(new Error(r.error || '読み込めません'));
+        }, ng);
+      },
+      feedback: feedback
+    });
+  }, function (e) {
+    loading.textContent = '読み込めませんでした（' + e.message + '）。少しおいて、開き直してください。';
+  });
+})();
+</script>
+</body></html>
