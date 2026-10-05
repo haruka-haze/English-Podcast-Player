@@ -41,9 +41,6 @@ h1{font-size:24px;line-height:1.3;margin:4px 0 2px}
 .ja-sub{display:none;font-size:14px;color:var(--muted);margin:2px 0 0}
 body.ja-all .ja-sub,.open>.ja-sub{display:block}
 .hh{cursor:pointer}
-details.guide{margin:12px 0 4px;border:1px solid var(--line);border-radius:12px;background:var(--card);padding:10px 14px;font-size:14px;line-height:1.7}
-details.guide summary{cursor:pointer;font-weight:600}
-details.guide ol{margin:6px 0 2px;padding-left:20px}
 section.topic{margin-top:28px}
 h2{font-size:19px;line-height:1.35;margin:0}
 .hrow{display:flex;align-items:flex-start;gap:8px;justify-content:space-between}
@@ -306,16 +303,6 @@ function startStudy(D, transport) {
   head.onclick = function () { head.classList.toggle('open'); };
   wrap.appendChild(head);
 
-  var guide = el('details', 'guide');
-  guide.appendChild(el('summary', '', 'おすすめの聞き方'));
-  var ol = el('ol');
-  ['英文を「ぼかす」にして、まず音だけで聞く（分からなくても止めずに最後まで）',
-   '英文を「表示」にして、目で追いながらもう一度聞く。分からない文（見出しも）はタップして和訳を確認',
-   '聞き取れなかった文は「↻」で聞き直す。慣れてきたら、音に重ねて声に出す（シャドーイング）',
-   '話題ごとの「Key words」を確かめて、最後に設問を解く'].forEach(function (t) { ol.appendChild(el('li', '', t)); });
-  guide.appendChild(ol);
-  guide.appendChild(el('div', 'note', '「↻」と「ここから再生」の位置は目安です（セリフの文字数から計算しています）。'));
-  wrap.appendChild(guide);
   if (D.studyFailed) wrap.appendChild(el('div', 'warn', '今日は和訳と教材を作れませんでした。英文だけをお届けします。'));
 
   D.segments.forEach(function (seg) {
